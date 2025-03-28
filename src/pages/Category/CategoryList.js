@@ -1,101 +1,246 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAllCategories } from "../../services/categoryService";
-import {
-  Container,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  CircularProgress,
-  Alert,
-} from "@mui/material";
+import useCategoryStore from "../../stores/categoryStore";
+import Swal from "sweetalert2";
+import * as Mui from "@mui/material";
+import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 
 const CategoryList = () => {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const {
+    categories,
+    loading,
+    error,
+    fetchCategories,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+  } = useCategoryStore();
+
+  const [openDialog, setOpenDialog] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+  });
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      console.log("Fetch categories");
+    fetchCategories(navigate);
+  }, [fetchCategories, navigate]);
 
-      try {
-        const response = await getAllCategories();
-        if (response.code === 200) {
-          setCategories(response.result || []);
-          setError(""); // Đặt error về rỗng nếu thành công
-        } else {
-          setCategories([]); // Đặt categories về rỗng nếu thất bại
-          setError("Không thể lấy danh sách danh mục");
-        }
-      } catch (err) {
-        setCategories([]); // Đặt categories về rỗng nếu có lỗi
-        setError(err.message || "Có lỗi khi lấy danh sách danh mục");
-        if (err.code === 401 || err.code === 403) {
-          if (window.location.pathname !== "/") {
-            navigate("/");
-          }
-        }
-      } finally {
-        setLoading(false);
+  const handleOpenAddDialog = () => {
+    setIsEditMode(false);
+    setFormData({ name: "", description: "" });
+    setOpenDialog(true);
+  };
+
+  const handleOpenEditDialog = (category) => {
+    setIsEditMode(true);
+    setCurrentCategory(category);
+    setFormData({ name: category.name, description: category.description });
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setCurrentCategory(null);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      // Đóng Dialog trước khi hiển thị lỗi
+      handleCloseDialog();
+      Swal.fire({
+        title: "Lỗi",
+        text: "Tên danh mục không được để trống!",
+        icon: "error",
+      });
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      // Đóng Dialog trước khi hiển thị lỗi
+      handleCloseDialog();
+      Swal.fire({
+        title: "Lỗi",
+        text: "Mô tả danh mục không được để trống!",
+        icon: "error",
+      });
+      return;
+    }
+
+    let result;
+    if (isEditMode) {
+      result = await updateCategory(currentCategory.id, formData);
+    } else {
+      result = await addCategory(formData);
+    }
+
+    // Đóng Dialog trước khi hiển thị thông báo
+    handleCloseDialog();
+
+    if (result.success) {
+      Swal.fire({
+        title: "Thành công",
+        text: isEditMode
+          ? "Cập nhật danh mục thành công!"
+          : "Thêm danh mục thành công!",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } else {
+      Swal.fire({
+        title: "Lỗi",
+        text: result.message,
+        icon: "error",
+      });
+    }
+  };
+
+  const handleDelete = async (categoryId) => {
+    const result = await Swal.fire({
+      title: "Bạn có chắc chắn?",
+      text: "Bạn muốn xóa danh mục này?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Xác nhận",
+      cancelButtonText: "Hủy",
+    });
+
+    if (result.isConfirmed) {
+      const deleteResult = await deleteCategory(categoryId);
+      if (deleteResult.success) {
+        Swal.fire({
+          title: "Thành công",
+          text: "Xóa danh mục thành công!",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          title: "Lỗi",
+          text: deleteResult.message,
+          icon: "error",
+        });
       }
-    };
-
-    fetchCategories();
-  }, []); // Dependency rỗng, chỉ chạy một lần khi mount
-
-  console.log("CategoryList component rendered");
+    }
+  };
 
   return (
-    <Container maxWidth="lg">
-      <Typography variant="h4" gutterBottom>
+    <Mui.Container maxWidth="lg">
+      <Mui.Typography variant="h4" gutterBottom>
         Danh sách danh mục
-      </Typography>
+      </Mui.Typography>
 
-      {loading && <CircularProgress />}
+      <Mui.Button
+        variant="contained"
+        color="primary"
+        onClick={handleOpenAddDialog}
+        sx={{ mb: 2 }}
+      >
+        Thêm mới
+      </Mui.Button>
+
+      {loading && <Mui.CircularProgress />}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Mui.Alert severity="error" sx={{ mb: 2 }}>
           {error}
-        </Alert>
+        </Mui.Alert>
       )}
 
       {!loading && !error && (
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="category table">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Tên danh mục</TableCell>
-                <TableCell>Mô tả</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+        <Mui.TableContainer component={Mui.Paper}>
+          <Mui.Table sx={{ minWidth: 650 }} aria-label="category table">
+            <Mui.TableHead>
+              <Mui.TableRow>
+                <Mui.TableCell>ID</Mui.TableCell>
+                <Mui.TableCell>Tên danh mục</Mui.TableCell>
+                <Mui.TableCell>Mô tả</Mui.TableCell>
+                <Mui.TableCell align="right">Hành động</Mui.TableCell>
+              </Mui.TableRow>
+            </Mui.TableHead>
+            <Mui.TableBody>
               {categories.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} align="center">
+                <Mui.TableRow>
+                  <Mui.TableCell colSpan={4} align="center">
                     Không có danh mục nào
-                  </TableCell>
-                </TableRow>
+                  </Mui.TableCell>
+                </Mui.TableRow>
               ) : (
                 categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell>{category.id}</TableCell>
-                    <TableCell>{category.name}</TableCell>
-                    <TableCell>{category.description}</TableCell>
-                  </TableRow>
+                  <Mui.TableRow key={category.id}>
+                    <Mui.TableCell>{category.id}</Mui.TableCell>
+                    <Mui.TableCell>{category.name}</Mui.TableCell>
+                    <Mui.TableCell>{category.description}</Mui.TableCell>
+                    <Mui.TableCell align="right">
+                      <Mui.IconButton
+                        color="primary"
+                        onClick={() => handleOpenEditDialog(category)}
+                      >
+                        <EditIcon />
+                      </Mui.IconButton>
+                      <Mui.IconButton
+                        color="error"
+                        onClick={() => handleDelete(category.id)}
+                      >
+                        <DeleteIcon />
+                      </Mui.IconButton>
+                    </Mui.TableCell>
+                  </Mui.TableRow>
                 ))
               )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            </Mui.TableBody>
+          </Mui.Table>
+        </Mui.TableContainer>
       )}
-    </Container>
+
+      <Mui.Dialog open={openDialog} onClose={handleCloseDialog}>
+        <Mui.DialogTitle>
+          {isEditMode ? "Sửa danh mục" : "Thêm danh mục"}
+        </Mui.DialogTitle>
+        <Mui.DialogContent>
+          <Mui.TextField
+            autoFocus
+            margin="dense"
+            name="name"
+            label="Tên danh mục"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={formData.name}
+            onChange={handleInputChange}
+          />
+          <Mui.TextField
+            margin="dense"
+            name="description"
+            label="Mô tả"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={formData.description}
+            onChange={handleInputChange}
+          />
+        </Mui.DialogContent>
+        <Mui.DialogActions>
+          <Mui.Button onClick={handleCloseDialog} color="secondary">
+            Hủy
+          </Mui.Button>
+          <Mui.Button onClick={handleSubmit} color="primary">
+            {isEditMode ? "Cập nhật" : "Thêm"}
+          </Mui.Button>
+        </Mui.DialogActions>
+      </Mui.Dialog>
+    </Mui.Container>
   );
 };
 
