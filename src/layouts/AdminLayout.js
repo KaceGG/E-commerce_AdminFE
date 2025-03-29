@@ -1,40 +1,19 @@
 import React, { useState } from "react";
-import { useNavigate, Link, Outlet } from "react-router-dom";
-import { logout } from "../services/authService";
-import Swal from "sweetalert2"; // Import SweetAlert2
+import { useNavigate, Outlet } from "react-router-dom";
+import Swal from "sweetalert2";
+import * as Mui from "@mui/material";
 import {
-  Box,
-  AppBar,
-  Toolbar,
-  Typography,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  CssBaseline,
-} from "@mui/material";
-import {
-  Menu as MenuIcon,
   Dashboard as DashboardIcon,
   People as PeopleIcon,
-  ShoppingCart as ShoppingCartIcon,
-  Inventory as InventoryIcon,
   Category as CategoryIcon,
+  ShoppingCart as ShoppingCartIcon,
   Logout as LogoutIcon,
 } from "@mui/icons-material";
+import { logout } from "../services/authService";
 
-const drawerWidth = 240;
-
-const AdminLayout = () => {
+const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const [error, setError] = useState();
 
   const handleLogout = async () => {
     // Hiển thị hộp thoại xác nhận bằng SweetAlert2
@@ -74,139 +53,83 @@ const AdminLayout = () => {
     }
   };
 
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem component={Link} to="/admin">
-          <ListItemIcon>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-        <ListItem component={Link} to="/users">
-          <ListItemIcon>
-            <PeopleIcon />
-          </ListItemIcon>
-          <ListItemText primary="Người dùng" />
-        </ListItem>
-        <ListItem component={Link} to="/categories">
-          <ListItemIcon>
-            <CategoryIcon />
-          </ListItemIcon>
-          <ListItemText primary="Danh mục" />
-        </ListItem>
-        <ListItem component={Link} to="/products">
-          <ListItemIcon>
-            <InventoryIcon />
-          </ListItemIcon>
-          <ListItemText primary="Sản phẩm" />
-        </ListItem>
-        <ListItem component={Link} to="/orders">
-          <ListItemIcon>
-            <ShoppingCartIcon />
-          </ListItemIcon>
-          <ListItemText primary="Đơn hàng" />
-        </ListItem>
-        <ListItem onClick={handleLogout}>
-          <ListItemIcon>
-            <LogoutIcon />
-          </ListItemIcon>
-          <ListItemText primary="Đăng xuất" />
-        </ListItem>
-      </List>
-    </div>
-  );
+  const menuItems = [
+    { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
+    { text: "Người dùng", icon: <PeopleIcon />, path: "/users" },
+    { text: "Danh mục", icon: <CategoryIcon />, path: "/categories" },
+    { text: "Sản phẩm", icon: <CategoryIcon />, path: "/products" },
+    { text: "Đơn hàng", icon: <ShoppingCartIcon />, path: "/orders" },
+    { text: "Đăng xuất", icon: <LogoutIcon />, onClick: handleLogout },
+  ];
 
   return (
-    <Box sx={{ display: "flex" }}>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
+    <Mui.Box sx={{ display: "flex" }}>
+      {/* Sidebar */}
+      <Mui.Drawer
+        variant="permanent"
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-          bgcolor: "#1976d2",
+          width: 240,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            width: 240,
+            boxSizing: "border-box",
+            backgroundColor: "#f5f5f5",
+          },
         }}
       >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Trang Quản trị
-          </Typography>
-          <Typography variant="body1" sx={{ mr: 2 }}>
-            Xin chào, Admin
-          </Typography>
-          <IconButton color="inherit" onClick={handleLogout}>
-            <LogoutIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+        <Mui.Toolbar />
+        <Mui.List>
+          {menuItems.map((item, index) => (
+            <Mui.ListItemButton
+              key={index}
+              onClick={() =>
+                item.onClick ? item.onClick() : navigate(item.path)
+              }
+              sx={{
+                backgroundColor:
+                  item.path === window.location.pathname
+                    ? "#e0e0e0"
+                    : "inherit",
+              }}
+            >
+              <Mui.ListItemIcon>{item.icon}</Mui.ListItemIcon>
+              <Mui.ListItemText primary={item.text} />
+            </Mui.ListItemButton>
+          ))}
+        </Mui.List>
+      </Mui.Drawer>
 
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="mailbox folders"
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
+      {/* Main content */}
+      <Mui.Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <Mui.AppBar
+          position="fixed"
           sx={{
-            display: { xs: "block", sm: "none" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
+            zIndex: (theme) => theme.zIndex.drawer + 1,
+            backgroundColor: "#1976d2",
           }}
         >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: "none", sm: "block" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: 8,
-          minHeight: "100vh",
-          bgcolor: "#f5f5f5",
-        }}
-      >
-        {error && (
-          <Typography color="error" gutterBottom>
-            {error}
-          </Typography>
-        )}
+          <Mui.Toolbar>
+            <Mui.Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ flexGrow: 1 }}
+            >
+              Trang Quản trị
+            </Mui.Typography>
+            <Mui.Button
+              color="inherit"
+              onClick={handleLogout}
+              endIcon={<LogoutIcon />}
+            >
+              Xin chào, Admin
+            </Mui.Button>
+          </Mui.Toolbar>
+        </Mui.AppBar>
+        <Mui.Toolbar />
         <Outlet />
-      </Box>
-    </Box>
+      </Mui.Box>
+    </Mui.Box>
   );
 };
 
