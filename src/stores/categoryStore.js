@@ -13,7 +13,6 @@ const useCategoryStore = create((set) => ({
 
   fetchCategories: async (navigate) => {
     set({ loading: true });
-    console.log("Fetch categories");
 
     try {
       const response = await getAllCategories();

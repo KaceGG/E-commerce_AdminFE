@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import useCategoryStore from "../../stores/categoryStore";
 import Swal from "sweetalert2";
 import * as Mui from "@mui/material";
-import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add,
+} from "@mui/icons-material";
 
 const CategoryList = () => {
   const navigate = useNavigate();
@@ -138,17 +142,14 @@ const CategoryList = () => {
 
   return (
     <Mui.Container maxWidth="lg">
-      <Mui.Typography variant="h4" gutterBottom>
-        Danh sách danh mục
-      </Mui.Typography>
-
       <Mui.Button
         variant="contained"
         color="primary"
         onClick={handleOpenAddDialog}
         sx={{ mb: 2 }}
       >
-        Thêm mới
+        Thêm danh mục
+        <Add />
       </Mui.Button>
 
       {loading && <Mui.CircularProgress />}
