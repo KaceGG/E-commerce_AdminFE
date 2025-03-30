@@ -19,7 +19,7 @@ const LoginPage = () => {
         const roles = decodedToken.roles || [];
 
         if (roles.includes("ADMIN")) {
-          navigate("/admin");
+          navigate("/dashboard");
         }
       } catch (error) {
         console.log("Token không hợp lệ: ", error);
@@ -47,7 +47,7 @@ const LoginPage = () => {
         const decodedToken = jwtDecode(token);
         const roles = decodedToken.roles || [];
         if (roles.includes("ADMIN")) {
-          navigate("/admin");
+          navigate("/dashboard");
         }
       } else {
         setError("Không có token được trả về từ server");
