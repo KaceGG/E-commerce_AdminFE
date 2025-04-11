@@ -12,18 +12,23 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (token) {
       try {
         const decodedToken = jwtDecode(token);
+        const currentTime = Date.now() / 1000; // Thời gian hiện tại tính bằng giây
         const roles = decodedToken.roles || [];
 
-        if (roles.includes("ADMIN")) {
+        // Kiểm tra token chưa hết hạn và có role ADMIN
+        if (decodedToken.exp > currentTime && roles.includes("ADMIN")) {
           navigate("/dashboard");
+        } else {
+          console.log("Token đã hết hạn hoặc không có quyền ADMIN");
+          sessionStorage.removeItem("token");
         }
       } catch (error) {
         console.log("Token không hợp lệ: ", error);
-        localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
       }
     }
   }, [navigate]);
@@ -41,13 +46,19 @@ const LoginPage = () => {
         });
 
         const token = response.result.token;
-        localStorage.setItem("token", token);
-        console.log("Token đã được lưu:", token);
+        sessionStorage.setItem("token", token); // Lưu token vào sessionStorage
+        console.log("Token đã được lưu vào sessionStorage:", token);
 
         const decodedToken = jwtDecode(token);
+        const currentTime = Date.now() / 1000; // Thời gian hiện tại tính bằng giây
         const roles = decodedToken.roles || [];
-        if (roles.includes("ADMIN")) {
+
+        // Kiểm tra token chưa hết hạn và có role ADMIN trước khi chuyển hướng
+        if (decodedToken.exp > currentTime && roles.includes("ADMIN")) {
           navigate("/dashboard");
+        } else {
+          setError("Token đã hết hạn hoặc bạn không có quyền ADMIN");
+          sessionStorage.removeItem("token");
         }
       } else {
         setError("Không có token được trả về từ server");

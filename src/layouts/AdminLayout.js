@@ -32,8 +32,8 @@ const AdminLayout = ({ children }) => {
     if (result.isConfirmed) {
       try {
         await logout();
-        localStorage.removeItem("token"); // Xóa token khi đăng xuất
-        navigate("/");
+        sessionStorage.removeItem("token"); // Xóa token từ sessionStorage khi đăng xuất
+        navigate("/"); // Chuyển hướng về trang đăng nhập
         // Hiển thị thông báo đăng xuất thành công
         Swal.fire({
           title: "Đăng xuất thành công!",
